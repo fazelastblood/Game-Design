@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game</title>
+    <style>
+        body {
+            margin: 0;
+            position: relative;
+        }
+        canvas {
+            width: 100%;
+            height: 100%;
+        }
+        #info {
+            position: absolute;
+            top: 50%;
+            width: 100%;
+            text-align: center;
+            z-index: 100;
+            display:none;
+            font-size: 30px;
+            color: white;
+        }
+
+        #findbutton {
+            position: absolute;
+            top: 50%;
+            width: 100%;
+            text-align: center;
+            z-index: 100;
+            display:none;
+            font-size: 30px;
+            color: white;
+        }
+        #task1 {
+            position: absolute;
+            top: 5%;
+            left: 5%;
+            text-align: center;
+            z-index: 100;
+            display: block;
+            font-size: 30px;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    
+    <script src="three.js"></script>
+    <script type="module" src="MTLLoader.js"></script>
+    <script type="module" src="./GLTFLoader.js"></script>
+    <script src="./OBJLoader.js"></script>
+    <script src = "PointerLockControls.js"></script>
+    <div id="task1">Task 1: Unlock Doors</div>
+    <div id="info">E To Open Doors</div>
+    <div id="findbutton">Find Button To Unlock Doors</div>
+    <script type="module">
+        import {GLTFLoader} from "./GLTFLoader.js"
+        var scene = new THREE.Scene( );
+        var camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1800 );
+        camera.position.z = -15;
+        camera.position.x = 0;
+        camera.position.y = 0;
+        
+        var renderer = new THREE.WebGLRenderer( );
+        renderer.setSize( window.innerWidth, window.innerHeight );
+        document.body.appendChild( renderer.domElement );
+
+        var keyboard = {};
+        var player = { height:2.5, speed:0.2, turnSpeed:Math.PI*0.02 };
+        var USE_WIREFRAME = false;
+
+        const geometryy = new THREE.BoxGeometry( 1, player.height, 1 );
+        const materiall = new THREE.MeshBasicMaterial( {color: 0xffffff} );
+        const playercube = new THREE.Mesh( geometryy, materiall );
+        scene.add( playercube );
+
+        window.addEventListener('resize', function() {
+            var width = window.innerWidth;
+            var height = window.innerHeight;
+            renderer.setSize(width, height);
+            camera.aspect = width / height;
+            camera.updateProjectionMatrix();
+        });
+
+        /*const mesh = new THREE.Mesh(
+		    new THREE.BoxGeometry(0.1,0.1,0.1),
+		    new THREE.MeshBasicMaterial({color:"transparent", wireframe:USE_WIREFRAME})
+	    );
+        scene.add(mesh)
+	    mesh.position.y += 1*/
+
+
+        // create shape
+        /*var geometry = new THREE.BoxGeometry( 2, 2, 2 );
+        var cubeMaterials = [
+            new THREE.MeshBasicMaterial({color:0xFFFFFF, side:THREE.DoubleSide}),
+            new THREE.MeshPhongMaterial({map: new THREE.TextureLoader().load('https://i.postimg.cc/x1QB4fsT/2k-mercury.jpg'), side:THREE.DoubleSide}),
+            new THREE.MeshLambertMaterial({map: new THREE.TextureLoader().load('https://i.postimg.cc/x1QB4fsT/2k-mercury.jpg'), side:THREE.DoubleSide}),
+            new THREE.MeshPhongMaterial({map: new THREE.TextureLoader().load('https://i.postimg.cc/x1QB4fsT/2k-mercury.jpg'), side:THREE.DoubleSide}),
+            new THREE.MeshLambertMaterial({map: new THREE.TextureLoader().load('https://i.postimg.cc/x1QB4fsT/2k-mercury.jpg'), side:THREE.DoubleSide}),
+            new THREE.MeshBasicMaterial({map: new THREE.TextureLoader().load('https://i.postimg.cc/x1QB4fsT/2k-mercury.jpg'), side:THREE.DoubleSide})
+        ];
+
+        // create a material, color or image texture
+        var material = new THREE.MeshFaceMaterial( cubeMaterials );
+        var cube = new THREE.Mesh( geometry, material );
+        scene.add( cube )*/
+
+
+        var ambientLight = new THREE.AmbientLight(0xFFFFFF, 1.0);
+        scene.add(ambientLight);
+       
+
+
+
+        const textureLoader = new THREE.TextureLoader();
+        const floorBaseColor = textureLoader.load("https://i.postimg.cc/zvVk4882/Sci-Fi-Floor-8-Base-Color.png");
+        const floorNormalMap = textureLoader.load("https://i.postimg.cc/fb8gVwW5/Sci-Fi-Floor-8-Normal.png");
+        const floorHeightMap = textureLoader.load("https://i.postimg.cc/TwSbLmvQ/Sci-Fi-Floor-8-Height.png");
+        const floorRoughness = textureLoader.load("https://i.postimg.cc/gkfKBxjf/Sci-Fi-Floor-8-Roughness.png");
+        const floorAmbientOcclusion = textureLoader.load("https://i.postimg.cc/gjtg04YJ/Sci-Fi-Floor-8-Ao.png");
+
+        const cellingBaseColor = textureLoader.load("https://i.postimg.cc/zvVk4882/Sci-Fi-Floor-8-Base-Color.png");
+        const cellingNormalMap = textureLoader.load("https://i.postimg.cc/fb8gVwW5/Sci-Fi-Floor-8-Normal.png");
+        const cellingHeightMap = textureLoader.load("https://i.postimg.cc/TwSbLmvQ/Sci-Fi-Floor-8-Height.png");
+        const cellingRoughness = textureLoader.load("https://i.postimg.cc/gkfKBxjf/Sci-Fi-Floor-8-Roughness.png");
+        const cellingAmbientOcclusion = textureLoader.load("https://i.postimg.cc/gjtg04YJ/Sci-Fi-Floor-8-Ao.png");
+
+        const leftWallBaseColor = textureLoader.load("https://i.postimg.cc/0jvTzzMX/texture.png");
+        const leftWallNormalMap = textureLoader.load("https://i.postimg.cc/HxbGWwx7/texture-glow.png");
+        const leftWallHeightMap = textureLoader.load("https://i.postimg.cc/52kWs9Tj/bump.png");
+        const leftWallRoughness = textureLoader.load("https://i.postimg.cc/Pqgsk3tj/specular.png");
+        const leftWallAmbientOcclusion = textureLoader.load("https://i.postimg.cc/HxbGWwx7/texture-glow.png");
+
+        const rightwallBaseColor = textureLoader.load("https://i.postimg.cc/0jvTzzMX/texture.png");
+        const rightwallNormalMap = textureLoader.load("https://i.postimg.cc/HxbGWwx7/texture-glow.png");
+        const rightwallHeightMap = textureLoader.load("https://i.postimg.cc/52kWs9Tj/bump.png");
+        const rightwallRoughness = textureLoader.load("https://i.postimg.cc/Pqgsk3tj/specular.png");
+        const rightwallAmbientOcclusion = textureLoader.load("https://i.postimg.cc/HxbGWwx7/texture-glow.png");
+
+        const bedfloorBaseColor = textureLoader.load("./Space_Floor_Albedo.png");
+        const bedfloorNormalMap = textureLoader.load("./Space_Floor_Normal.png");
+        const bedfloorHeightMap = textureLoader.load("./Space_Floor_Height.png");
+        const bedfloorRoughness = textureLoader.load("./Space_Floor_Roughness.png");
+        const bedfloorAmbientOcclusion = textureLoader.load("./Space_Floor_Roughness.png");
+
+        const doorsBaseColor = textureLoader.load("./MetalPipeWallRusty_basecolor.png");
+        const doorsNormalMap = textureLoader.load("./MetalPipeWallRusty_normal.png");
+        const doorsHeightMap = textureLoader.load("./MetalPipeWallRusty_height.png");
+        const doorsRoughness = textureLoader.load("./MetalPipeWallRusty_roughness.png");
+        const doorsAmbientOcclusion = textureLoader.load("./MetalPipeWallRusty_ambientocclusion.png");
+
+        const cargoBaseColor = textureLoader.load("./Sci_fi_Metal_Panel_004_basecolor.jpg");
+        const cargoNormalMap = textureLoader.load("./Sci_fi_Metal_Panel_004_normal.jpg");
+        const cargoHeightMap = textureLoader.load("./Sci_fi_Metal_Panel_004_height.png");
+        const cargoRoughness = textureLoader.load("./Sci_fi_Metal_Panel_004_roughness (1).jpg");
+        const cargoAmbientOcclusion = textureLoader.load("./Sci_fi_Metal_Panel_004_ambientOcclusion.jpg");
+
+        // Create mesh with these textures
+        //const plane5 = new THREE.Mesh(new THREE.PlaneGeometry(2, 2, 512, 512), new THREE.MeshStandardMaterial({ map: brickWallbasecolor, normalMap: brickWallnormalMap, displacementMap: brickWallheightMap, displacementScale: 0.05, roughnessMap: brickWallroughnessMap, roughness: 0.25, aoMap: brickWallambientOcclusionMap }))
+        const floor = new THREE.Mesh(new THREE.BoxGeometry(10, 1, 10), new THREE.MeshStandardMaterial({ map: floorBaseColor, normalMap: floorNormalMap, displacementMap: floorHeightMap, displacementScale: 0.05, roughnessMap: floorRoughness, roughness: 0.25, aoMap: floorAmbientOcclusion }));
+        floor.geometry.attributes.uv2 = floor.geometry.attributes.uv;
+        floor.position.y = -5.5
+        scene.add(floor)
+
+        const celling = new THREE.Mesh(new THREE.BoxGeometry(10, 1, 10), new THREE.MeshStandardMaterial({ map: cellingBaseColor, normalMap: cellingNormalMap, displacementMap: cellingHeightMap, displacementScale: 0.05, roughnessMap: cellingRoughness, roughness: 0.25, aoMap: cellingAmbientOcclusion }));
+        celling.geometry.attributes.uv2 = celling.geometry.attributes.uv;
+        celling.position.y = 5.5
+        scene.add(celling)
+
+        const leftwall = new THREE.Mesh(new THREE.BoxGeometry(1, 10, 10), new THREE.MeshStandardMaterial({ map: leftWallBaseColor, normalMap: leftWallNormalMap, displacementMap: leftWallHeightMap, displacementScale: 0.05, roughness: 0.25, aoMap: leftWallAmbientOcclusion }));
+        leftwall.geometry.attributes.uv2 = leftwall.geometry.attributes.uv;
+        leftwall.position.x = -5.5
+        scene.add(leftwall)
+
+        const rightwall = new THREE.Mesh(new THREE.BoxGeometry(1, 10, 10), new THREE.MeshStandardMaterial({ map: rightwallBaseColor, normalMap: rightwallNormalMap, displacementMap: rightwallHeightMap, displacementScale: 0.05, roughness: 0.25, aoMap: rightwallAmbientOcclusion }));
+        rightwall.geometry.attributes.uv2 = rightwall.geometry.attributes.uv;
+        rightwall.position.x = 5.5
+        scene.add(rightwall)
+
+        //Room 2
+
+        const floor1 = new THREE.Mesh(new THREE.BoxGeometry(10, 1, 10), new THREE.MeshStandardMaterial({ map: floorBaseColor, normalMap: floorNormalMap, displacementMap: floorHeightMap, displacementScale: 0.05, roughnessMap: floorRoughness, roughness: 0.25, aoMap: floorAmbientOcclusion }));
+        floor1.geometry.attributes.uv2 = floor1.geometry.attributes.uv;
+        floor1.position.y = -5.5
+        floor1.position.z = 10
+        scene.add(floor1)
+
+        const celling1 = new THREE.Mesh(new THREE.BoxGeometry(10, 1, 10), new THREE.MeshStandardMaterial({ map: cellingBaseColor, normalMap: cellingNormalMap, displacementMap: cellingHeightMap, displacementScale: 0.05, roughnessMap: cellingRoughness, roughness: 0.25, aoMap: cellingAmbientOcclusion }));
+        celling1.geometry.attributes.uv2 = celling1.geometry.attributes.uv;
+        celling1.position.y = 5.5
+        celling1.position.z = 10
+        scene.add(celling1)
+
+        const leftwall1 = new THREE.Mesh(new THREE.BoxGeometry(1, 10, 10), new THREE.MeshStandardMaterial({ map: leftWallBaseColor, normalMap: leftWallNormalMap, displacementMap: leftWallHeightMap, displacementScale: 0.05, roughness: 0.25, aoMap: leftWallAmbientOcclusion }));
+        leftwall1.geometry.attributes.uv2 = leftwall1.geometry.attributes.uv;
+        leftwall1.position.x = -5.5
+        leftwall1.position.z = 10
+        scene.add(leftwall1)
+
+        const rightwall1 = new THREE.Mesh(new THREE.BoxGeometry(1, 10, 10), new THREE.MeshStandardMaterial({ map: rightwallBaseColor, normalMap: rightwallNormalMap, displacementMap: rightwallHeightMap, displacementScale: 0.05, roughness: 0.25, aoMap: rightwallAmbientOcclusion }));
+        rightwall1.geometry.attributes.uv2 = rightwall1.geometry.attributes.uv;
+        rightwall1.position.x = 5.5
+        rightwall1.position.z = 10
+        scene.add(rightwall1)
+
+        const floor2 = new THREE.Mesh(new THREE.BoxGeometry(25, 1, 25), new THREE.MeshStandardMaterial({ map: floorBaseColor, normalMap: floorNormalMap, displacementMap: floorHeightMap, displacementScale: 0.05, roughnessMap: floorRoughness, roughness: 0.25, aoMap: floorAmbientOcclusion }));
+        floor2.geometry.attributes.uv2 = floor1.geometry.attributes.uv;
+        floor2.position.y = -5.5
+        floor2.position.z = -17.5
+        scene.add(floor2)
+
+        const celling2 = new THREE.Mesh(new THREE.BoxGeometry(25, 1, 25), new THREE.MeshStandardMaterial({ map: floorBaseColor, normalMap: floorNormalMap, displacementMap: floorHeightMap, displacementScale: 0.05, roughnessMap: floorRoughness, roughness: 0.25, aoMap: floorAmbientOcclusion }));
+        celling2.geometry.attributes.uv2 = celling1.geometry.attributes.uv;
+        celling2.position.y = 5.5
+        celling2.position.z = -17.5
+        scene.add(celling2)
+
+        const leftwall2 = new THREE.Mesh(new THREE.BoxGeometry(1, 10, 25), new THREE.MeshStandardMaterial({map: bedfloorBaseColor, normalMap: bedfloorNormalMap, displacementMap: bedfloorHeightMap, displacementScale: 0.05, roughness: 0.25, aoMap: bedfloorAmbientOcclusion  }));
+        leftwall2.geometry.attributes.uv2 = leftwall1.geometry.attributes.uv;
+        leftwall2.position.x = -12
+        leftwall2.position.z = -17.5
+        scene.add(leftwall2)
+
+
+        const backcargowall2 = new THREE.Mesh(new THREE.BoxGeometry(1, 10, 25), new THREE.MeshStandardMaterial({map: floorBaseColor, normalMap: floorNormalMap, displacementMap: floorHeightMap, displacementScale: 0.05, roughnessMap: floorRoughness, roughness: 0.25, aoMap: floorAmbientOcclusion }));
+        backcargowall2.geometry.attributes.uv2 = backcargowall2.geometry.attributes.uv;
+        backcargowall2.position.x = 0
+        backcargowall2.rotation.y = 1.55
+        backcargowall2.position.z = -30.5
+        scene.add(backcargowall2)
+
+        const rightwall2 = new THREE.Mesh(new THREE.BoxGeometry(1, 10, 25), new THREE.MeshStandardMaterial({ map: bedfloorBaseColor, normalMap: bedfloorNormalMap, displacementMap: bedfloorHeightMap, displacementScale: 0.05, roughness: 0.25, aoMap: bedfloorAmbientOcclusion  }));
+        rightwall2.geometry.attributes.uv2 = rightwall1.geometry.attributes.uv;
+        rightwall2.position.x = 12
+        rightwall2.position.z = -17.5
+        scene.add(rightwall2)
+
+        const door1 = new THREE.Mesh(new THREE.BoxGeometry(1, 10, 12.5), new THREE.MeshStandardMaterial({ map: doorsBaseColor, normalMap: doorsNormalMap, displacementMap: doorsHeightMap, displacementScale: 0.05, roughness: 0.25, aoMap: doorsAmbientOcclusion  }));
+        door1.geometry.attributes.uv2 = door1.geometry.attributes.uv;
+        door1.position.x = -6
+        door1.rotation.y = 1.55
+        door1.position.z = -4.7
+        scene.add(door1)
+
+        const door2 = new THREE.Mesh(new THREE.BoxGeometry(1, 10, 12.5), new THREE.MeshStandardMaterial({ map: doorsBaseColor, normalMap: doorsNormalMap, displacementMap: doorsHeightMap, displacementScale: 0.05, roughness: 0.25, aoMap: doorsAmbientOcclusion  }));
+        door2.geometry.attributes.uv2 = door2.geometry.attributes.uv;
+        door2.position.x = 6
+        door2.rotation.y = 1.55
+        door2.position.z = -4.7
+        scene.add(door2)
+
+
+
+        const ceildoor = new THREE.Mesh(new THREE.BoxGeometry(1, 10, 12.5), new THREE.MeshStandardMaterial({ map: doorsBaseColor, normalMap: doorsNormalMap, displacementMap: doorsHeightMap, displacementScale: 0.05, roughness: 0.25, aoMap: doorsAmbientOcclusion  }));
+        ceildoor.geometry.attributes.uv2 = ceildoor.geometry.attributes.uv;
+        ceildoor.position.x = -6
+        ceildoor.rotation.y = 1.55
+        ceildoor.position.z = 4.7
+        scene.add(ceildoor)
+
+        const ceildoor2 = new THREE.Mesh(new THREE.BoxGeometry(1, 10, 12.5), new THREE.MeshStandardMaterial({ map: doorsBaseColor, normalMap: doorsNormalMap, displacementMap: doorsHeightMap, displacementScale: 0.05, roughness: 0.25, aoMap: doorsAmbientOcclusion  }));
+        ceildoor2.geometry.attributes.uv2 = ceildoor2.geometry.attributes.uv;
+        ceildoor2.position.x = 6
+        ceildoor2.rotation.y = 1.55
+        ceildoor2.position.z = 4.7
+        scene.add(ceildoor2)
+
+        const gltfmesh = new THREE.Mesh(
+            new THREE.BoxGeometry(1, 1, 1),
+            new THREE.MeshBasicMaterial({color:0x000000})
+        );
+        scene.add(gltfmesh)
+
+
+        const loader = new GLTFLoader();
+        loader.load('./SWITCHBOARD_OLD.gltf', function(gltf){
+            gltf.scene.scale.set(10,10,5);
+            gltf.scene.position.set(-11.5, -5, -10)
+            gltf.scene.rotation.set(0, 1.55, 0)
+            gltfmesh.position.y = playercube.position.y;
+            gltfmesh.position.z = gltf.scene.position.z
+            gltfmesh.position.x = gltf.scene.position.x
+            scene.add(gltf.scene)
+        });
+
+
+        loader.load('./SWITCHBOARD_OLD.gltf', function(gltf){
+            gltf.scene.scale.set(10,10,5);
+            gltf.scene.position.set(-11.5, -5, -14.5)
+            gltf.scene.rotation.set(0, 1.55, 0)
+            scene.add(gltf.scene)
+        });
+        loader.load('./SWITCHBOARD_OLD.gltf', function(gltf){
+            gltf.scene.scale.set(10,10,5);
+            gltf.scene.position.set(-11.5, -5, -18.5)
+            gltf.scene.rotation.set(0, 1.55, 0)
+            scene.add(gltf.scene)
+        });
+
+        const cargo12 = new THREE.Mesh(new THREE.BoxGeometry(3, 3, 3), new THREE.MeshStandardMaterial({ map: cargoBaseColor, normalMap: cargoNormalMap, displacementMap: cargoHeightMap, displacementScale: 0.05, roughness: 0.25, aoMap: cargoAmbientOcclusion }));
+        cargo12.geometry.attributes.uv2 = cargo12.geometry.attributes.uv;
+        cargo12.position.x = 7
+        cargo12.position.z = -28.5
+        cargo12.position.y = -3.5
+        scene.add(cargo12)
+
+        const cargo123 = new THREE.Mesh(new THREE.BoxGeometry(3, 3, 3), new THREE.MeshStandardMaterial({ map: cargoBaseColor, normalMap: cargoNormalMap, displacementMap: cargoHeightMap, displacementScale: 0.05, roughness: 0.25, aoMap: cargoAmbientOcclusion }));
+        cargo123.geometry.attributes.uv2 = cargo12.geometry.attributes.uv;
+        cargo123.position.x = 10
+        cargo123.position.z = -25.5
+        cargo123.position.y = -3.5
+        scene.add(cargo123)
+
+        const cargo124 = new THREE.Mesh(new THREE.BoxGeometry(3, 3, 3), new THREE.MeshStandardMaterial({ map: cargoBaseColor, normalMap: cargoNormalMap, displacementMap: cargoHeightMap, displacementScale: 0.05, roughness: 0.25, aoMap: cargoAmbientOcclusion }));
+        cargo124.geometry.attributes.uv2 = cargo124.geometry.attributes.uv;
+        cargo124.position.x = 10
+        cargo124.position.z = -28.5
+        cargo124.position.y = -0.5
+        scene.add(cargo124)
+
+        function detectCollisionCubes(object1, object2){
+            object1.geometry.computeBoundingBox(); //not needed if its already calculated
+            object2.geometry.computeBoundingBox();
+            object1.updateMatrixWorld();
+            object2.updateMatrixWorld();
+            
+            var box1 = object1.geometry.boundingBox.clone();
+            box1.applyMatrix4(object1.matrixWorld);
+
+            var box2 = object2.geometry.boundingBox.clone();
+            box2.applyMatrix4(object2.matrixWorld);
+
+            return box1.intersectsBox(box2);
+        }
+
+
+        var controls = new THREE.PointerLockControls(camera, document.body);
+        controls.pointerSpeed = 1.5;
+        document.body.addEventListener("click", function() {
+            controls.lock();
+        });
+        controls.addEventListener("lock", function(){
+
+        });
+        controls.addEventListener("unlock", function() {
+
+        })
+
+        var startalarms = true
+        const alarmlight = new THREE.AmbientLight( 0xFF0000, 2, 50 );
+
+        function startalarm() {
+            startalarms = false
+            scene.add( alarmlight );
+        }
+
+        // game logic
+        var update = function() {
+            //cube.rotation.x += 0.01;
+            //cube.rotation.y += 0.005;
+            //console.log(camera.position.z)
+            var time = Date.now() * 0.0005;
+            alarmlight.position.x = Math.sin(time * 0.7) * 30;
+            alarmlight.position.y = Math.cos(time * 0.5) * 40;
+            alarmlight.position.z = Math.cos(time * 0.3) * 30;
+
+
+
+            
+        };
+
+        //draw Scene
+        var render = function( ) {
+            renderer.render( scene, camera );
+        };
+
+        var canopen = true;
+        var doorsopen = false
+
+        function opendoors5() {
+            door1.position.x = -11.4;
+            door2.position.x = 11.4;
+            canopen = false;
+        }
+
+        function opendoors4() {
+            door1.position.x = -10;
+            door2.position.x = 10;
+            canopen = false;
+            setTimeout(opendoors5, 1000);
+        }
+
+        function opendoors3() {
+            door1.position.x = -9;
+            door2.position.x = 9;
+            canopen = false;
+            setTimeout(opendoors4, 1000);
+        }
+
+        function opendoors2() {
+            door1.position.x = -8;
+            door2.position.x = 8;
+            canopen = false;
+            setTimeout(opendoors3, 1000);
+        }
+
+        function opendoors1() {
+            door1.position.x = -7;
+            door2.position.x = 7;
+            canopen = false;
+            doorsopen = true
+            setTimeout(opendoors2, 1000);
+            
+        }
+
+        // run game loop
+        var GameLoop = function( ) {
+            requestAnimationFrame( GameLoop );
+            playercube.position.x = camera.position.x;
+            playercube.position.y = camera.position.y;
+            playercube.position.z = camera.position.z;
+            playercube.rotation.x = camera.rotation.x;
+            playercube.rotation.y = camera.rotation.y;
+            playercube.rotation.z = camera.rotation.z;
+
+
+
+            //mesh.rotation.x += 0.01;
+            //mesh.rotation.y += 0.02;
+
+            if(detectCollisionCubes(leftwall, playercube) == true) {
+                camera.position.x = leftwall.position.x + 1.1;
+                camera.position.y = leftwall.position.y + 1.1;
+                camera.position.z = camera.position.z;
+            }
+
+            if(detectCollisionCubes(rightwall, playercube) == true) {
+                camera.position.x = rightwall.position.x - 1.1;
+                camera.position.y = rightwall.position.y + 1.1;
+                camera.position.z = camera.position.z;
+            }
+
+            if(detectCollisionCubes(rightwall1, playercube) == true) {
+                camera.position.x = rightwall1.position.x - 1.1;
+                camera.position.y = rightwall1.position.y + 1.1;
+                camera.position.z = camera.position.z;
+            }
+
+            if(detectCollisionCubes(leftwall1, playercube) == true) {
+                camera.position.x = leftwall1.position.x + 1.1;
+                camera.position.y = leftwall1.position.y + 1.1;
+                camera.position.z = camera.position.z;
+            }
+
+            if(detectCollisionCubes(celling, playercube) == true) {
+                camera.position.x = celling.position.x + 1.1;
+                camera.position.y = celling.position.y + 1.1;
+                camera.position.z = camera.position.z;
+            }
+
+            if(detectCollisionCubes(rightwall2, playercube) == true) {
+                camera.position.x = rightwall2.position.x - 1.5;
+                camera.position.z = camera.position.z;
+            }
+
+            if(detectCollisionCubes(leftwall2, playercube) == true) {
+                camera.position.x = leftwall2.position.x + 1.5;
+                camera.position.z = camera.position.z;
+            }
+
+            if(detectCollisionCubes(ceildoor, playercube) == true) {
+                camera.position.z = ceildoor.position.z - 1.5;
+            }
+
+            if(detectCollisionCubes(ceildoor2, playercube) == true) {
+                camera.position.z = ceildoor2.position.z - 1.5;
+
+            }
+
+            if(detectCollisionCubes(backcargowall2, playercube) == true) {
+                camera.position.z = backcargowall2.position.z + 1.5;
+            }
+
+            if(detectCollisionCubes(door1, playercube) == true) {
+                camera.position.z = door1.position.z - 1.5;
+            }
+
+            if(detectCollisionCubes(door1, playercube) == true && doorsopen == false) {
+                document.getElementById("findbutton").style.display = "block";
+            }
+
+            if(detectCollisionCubes(door2, playercube) == true) {
+                camera.position.z = door2.position.z - 1.5;
+            }
+
+            if(detectCollisionCubes(door2, playercube) == true && doorsopen == false) {
+                document.getElementById("findbutton").style.display = "block";
+            }
+
+            if(detectCollisionCubes(door2, playercube) == false && detectCollisionCubes(door1, playercube) == false) {
+                document.getElementById("findbutton").style.display = "none";
+            }
+
+            if(detectCollisionCubes(gltfmesh, playercube) == true && doorsopen == false) {
+                document.getElementById("info").style.display = "block";
+            }
+
+            if(detectCollisionCubes(gltfmesh, playercube) == false && detectCollisionCubes(gltfmesh, playercube) == false) {
+                document.getElementById("info").style.display = "none";
+            }
+
+            if(doorsopen == false) {
+                document.getElementById("task1").style.display = "block";
+            }
+
+            if(doorsopen == true) {
+                document.getElementById("task1").style.display = "none";
+            }
+
+            if (doorsopen == true && startalarms == true) {
+                startalarm();
+            }
+
+            if(keyboard[87]){ // W key task1
+                controls.moveForward(player.speed);
+            }
+            if(keyboard[83]){ // S key
+                controls.moveForward(-1 * player.speed);
+            }
+            if(keyboard[65]){ // A key
+                controls.moveRight(-1 * player.speed);
+            }
+            if(keyboard[68]){ // D key
+                controls.moveRight(player.speed);
+            }
+
+            if(keyboard[80]){ // P for position
+                console.log(camera.position);
+            }
+
+
+            if(detectCollisionCubes(gltfmesh, playercube) == true && keyboard[69] && canopen == true) {
+                if (keyboard[69]){
+                    if(canopen == true) {
+                        canopen = false;
+                        opendoors1()
+                    }
+                }
+            }
+
+	
+            update( );
+            render( );
+        };
+
+        function keyDown(event){
+            keyboard[event.keyCode] = true;
+        }
+
+        function keyUp(event){
+            keyboard[event.keyCode] = false;
+        }
+
+        window.addEventListener('keydown', keyDown);
+        window.addEventListener('keyup', keyUp);
+
+        GameLoop( );
+    </script>
+</body>
+</html>
